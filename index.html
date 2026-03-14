@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsi PWEB elsha74 </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); 
+        }
+    </style>
+</head>
+<body class="min-h-screen p-6 md:p-12 text-pink-900">
+
+    <div class="max-w-4xl mx-auto bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white p-8">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-pink-600">Data Mahasiswa </h1>
+            <p class="text-pink-400 text-sm italic">Informatics Engineering</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+            <input id="nama" type="text" placeholder="Nama Mahasiswa..." 
+                class="px-5 py-3 rounded-2xl border-2 border-pink-200 focus:border-pink-400 focus:outline-none transition-all bg-white/50">
+            <input id="email" type="email" placeholder="Email (contoh@mail.com)" 
+                class="px-5 py-3 rounded-2xl border-2 border-pink-200 focus:border-pink-400 focus:outline-none transition-all bg-white/50">
+            <button onclick="tambah()" 
+                class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
+                Simpan
+            </button>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-pink-100 shadow-sm">
+            <table class="w-full text-left bg-white/50">
+                <thead>
+                    <tr class="bg-pink-500 text-white text-sm uppercase tracking-wider">
+                        <th class="px-6 py-4">NPM</th>
+                        <th class="px-6 py-4">Nama</th>
+                        <th class="px-6 py-4">Email</th>
+                        <th class="px-6 py-4 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tabel" class="divide-y divide-pink-100">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Memuat data dari server
+        async function loadData(){
+            const res = await fetch('/api/data');
+            const data = await res.json();
+            let html = "";
+            
+            data.forEach(d => {
+                html += `
+                <tr class="hover:bg-pink-50/50 transition-colors">
+                    <td class="px-6 py-4 font-bold text-pink-600">${d.npm}</td> 
+                    <td class="px-6 py-4 font-semibold text-gray-700">${d.nama}</td>
+                    <td class="px-6 py-4 text-gray-500 text-sm">${d.email || '-'}</td>
+                    <td class="px-6 py-4 text-center space-x-2">
+                        <button onclick="editData(${d.id}, '${d.npm}', '${d.nama}', '${d.email || ''}')" 
+                            class="bg-amber-100 hover:bg-amber-500 text-amber-500 hover:text-white px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-sm">
+                            Edit ✏️
+                        </button>
+                        <button onclick="hapus(${d.id})" 
+                            class="bg-rose-100 hover:bg-rose-500 text-rose-500 hover:text-white px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-sm">
+                            Hapus 🗑️
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById("tabel").innerHTML = html || '<tr><td colspan="4" class="text-center py-10 text-pink-300 italic">Belum ada data...</td></tr>';
+        }
+
+        // Menambah data baru
+        async function tambah(){
+            const namaInput = document.getElementById("nama");
+            const emailInput = document.getElementById("email");
+            
+            if(!namaInput.value || !emailInput.value) return alert("Isi nama dan email dulu ya! ✨");
+
+            await fetch('/api/data',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    nama: namaInput.value, 
+                    email: emailInput.value 
+                })
+            });
+
+            namaInput.value = "";
+            emailInput.value = "";
+            loadData();
+        }
+
+        // Mengubah data (NPM, Nama, dan Email)
+        async function editData(id, oldNpm, oldNama, oldEmail){
+            const newNpm = prompt("Ubah NPM:", oldNpm);
+            const newNama = prompt("Ubah Nama:", oldNama);
+            const newEmail = prompt("Ubah Email:", oldEmail);
+            
+            if (newNpm && newNama && newEmail) {
+                await fetch('/api/data/' + id, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        npm: newNpm, 
+                        nama: newNama, 
+                        email: newEmail 
+                    })
+                });
+                loadData();
+            }
+        }
+
+        // Menghapus data
+        async function hapus(id){
+            if(confirm("Yakin ingin menghapus data ini? 🥺")) {
+                await fetch('/api/data/'+id, { method:'DELETE' });
+                loadData();
+            }
+        }
+
+        // Inisialisasi awal
+        loadData();
+    </script>
+</body>
+</html>
